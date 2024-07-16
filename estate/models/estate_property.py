@@ -1,4 +1,6 @@
-from odoo import api, fields, models, exceptions
+from odoo import api, fields, models
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools.float_utils import float_compare, float_is_zero
 
 class EstateProperty(models.Model):
     _name = "estate.property"
@@ -38,10 +40,10 @@ class EstateProperty(models.Model):
     def cancel_property(self):
         for record in self:
             if record.state == "sold":
-               raise exceptions.UserError("A sold property cannot be cancelled")
+               raise UserError("A sold property cannot be cancelled")
             elif record.state == "cancelled":
                
-               raise exceptions.UserError("The property sell was already cancelled")
+               raise UserError("The property sell was already cancelled")
             else:
                 record.state = "cancelled"
                 
@@ -50,9 +52,9 @@ class EstateProperty(models.Model):
     def sell_property(self):
         for record in self:
             if record.state == "cancelled":
-                raise exceptions.UserError("A cancelled property cannot be sold")
+                raise UserError("A cancelled property cannot be sold")
             elif record.state == "sold":
-                raise exceptions.UserError("The property is already sold")
+                raise UserError("The property is already sold")
             else:
                 record.state = "sold"
         return True
@@ -76,6 +78,15 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = 0
             self.garden_orientation = False
+
+    @api.constrains('selling_price')
+    def _check_selling_price(self):
+        for record in self:
+            if float_is_zero(record.expected_price, precision_digits=2):
+                    continue
+            if float_compare(record.selling_price, record.expected_price*0.9, 2) < 0:
+                raise ValidationError("The offer cannot be lower than 90 percent of the expected price")
+      
 
     _sql_constraints = [
         ('check_expected_price', 'CHECK(expected_price > 0)',
