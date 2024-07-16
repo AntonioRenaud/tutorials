@@ -9,7 +9,7 @@ class EstateProperty(models.Model):
     postcode = fields.Char('Postcode')
     date_availability = fields.Date('Available From', copy=False, default=fields.Date.add(fields.Date.today(),months=3))
     expected_price = fields.Float('Expected Price', required=True)
-    selling_price = fields.Float(compute='_final_price', string='Selling Price', readonly=True, copy=False)
+    selling_price = fields.Float('Selling Price', readonly=True, copy=False)
     bedrooms = fields.Integer('Bedrooms', default=2)
     living_area = fields.Integer('Living Area(sqm)')
     facades = fields.Integer('Facades')
@@ -77,15 +77,5 @@ class EstateProperty(models.Model):
             self.garden_area = 0
             self.garden_orientation = False
 
-    @api.depends("offer_ids.status")
-    def _final_price(self):
-        for record in self:
-            for offer in record.offer_ids:
-                if offer.status == "accepted" and offer.price>0:
-                    record.selling_price = offer.price                     
-                    record.buyer_id = offer.partner_id
-                    record.state = "sold"
-                    break
-                else:
-                    return True
+
                 

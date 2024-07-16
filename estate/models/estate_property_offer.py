@@ -6,15 +6,20 @@ class EstatePropertyOffer(models.Model):
     _description ="Offers made on property"
 
     price = fields.Float(string="Price", default="0.0")
-    status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')], copy=False, string="Status", default="Pendant")
+    status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')], copy=False, string="Status")
     partner_id = fields.Many2one("res.partner", string="Partner", required=True)
     property_id = fields.Many2one("estate.property", required=True)
     validity = fields.Integer(string="Validity", default="7")
     date_deadline = fields.Date(compute="_compute_deadline", inverse="_inverse_deadline")
 
     def accept_offer(self):
-        for record in self:
-                record.status = "accepted"
+        if "accepted" in self.property_id.offer_ids.mapped("status"):
+            raise exceptions.UserError("An offer has already been accepted")
+        else:
+            self.status = "accepted"
+            self.property_id.selling_price = self.price
+            self.property_id.state = "sold"
+            self.property_id.buyer_id = self.partner_id.id
         return True
     
     def reject_offer(self):
@@ -37,4 +42,4 @@ class EstatePropertyOffer(models.Model):
                 offer.validity = (offer.date_deadline - fields.Date.to_date(offer.create_date)).days
     
 
-    
+   
