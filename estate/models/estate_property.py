@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models, exceptions
 
 class EstateProperty(models.Model):
     _name = "estate.property"
@@ -9,7 +9,7 @@ class EstateProperty(models.Model):
     postcode = fields.Char('Postcode')
     date_availability = fields.Date('Available From', copy=False, default=fields.Date.add(fields.Date.today(),months=3))
     expected_price = fields.Float('Expected Price', required=True)
-    selling_price = fields.Float('Selling Price', readonly=True, copy=False)
+    selling_price = fields.Float(compute='_final_price', string='Selling Price', readonly=True, copy=False)
     bedrooms = fields.Integer('Bedrooms', default=2)
     living_area = fields.Integer('Living Area(sqm)')
     facades = fields.Integer('Facades')
@@ -27,4 +27,65 @@ class EstateProperty(models.Model):
         selection=[('new','New'), ('offer received','Offer Received'), ('offer accepted','Offer Accepted'), ('sold','Sold'),('cancelled','Cancelled')],
         default='new'
     )
+    property_type_id = fields.Many2one("estate.property.type", string="Type")
+    saleperson_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
+    buyer_id = fields.Many2one('res.partner', string='Buyer', copy=False)
+    tag_ids = fields.Many2many("estate.property.tag", string="Tags")
+    offer_ids = fields.One2many("estate.property.offer", "property_id", string="Offers")
+    total_area= fields.Float(compute="_total_area")
+    best_price = fields.Float(compute="_best_price")
+
+    def cancel_property(self):
+        for record in self:
+            if record.state == "sold":
+               raise exceptions.UserError("A sold property cannot be cancelled")
+            elif record.state == "cancelled":
+               
+               raise exceptions.UserError("The property sell was already cancelled")
+            else:
+                record.state = "cancelled"
+                
+        return True
     
+    def sell_property(self):
+        for record in self:
+            if record.state == "cancelled":
+                raise exceptions.UserError("A cancelled property cannot be sold")
+            elif record.state == "sold":
+                raise exceptions.UserError("The property is already sold")
+            else:
+                record.state = "sold"
+        return True
+
+
+    @api.depends("living_area","garden_area")
+    def _total_area(self):
+        for record in self:
+            record.total_area = record.living_area + record.garden_area
+        
+    @api.depends("offer_ids.price")
+    def _best_price(self):
+        for record in self:
+            record.best_price = max(record.offer_ids.mapped("price"), default=0.0)
+
+    @api.onchange("garden")
+    def _onchange_garden(self):
+        if self.garden:
+            self.garden_area = 10
+            self.garden_orientation = 'north'
+        else:
+            self.garden_area = 0
+            self.garden_orientation = False
+
+    @api.depends("offer_ids.status")
+    def _final_price(self):
+        for record in self:
+            for offer in record.offer_ids:
+                if offer.status == "accepted" and offer.price>0:
+                    record.selling_price = offer.price                     
+                    record.buyer_id = offer.partner_id
+                    record.state = "sold"
+                    break
+                else:
+                    return True
+                
