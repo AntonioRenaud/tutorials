@@ -72,9 +72,8 @@
                             </page>
                             <page string="Offers">
                                 <group
-                                    class="d-flex w-100 justify-content-center ">
-                                    <field name="offer_ids" nolabel="1"
-                                        class="d-flex justify-content-center" />
+                                    class="d-flex w-100 justify-content-center">
+                                    <field name="offer_ids" nolabel="1" />
                                 </group>
                             </page>
                             <page string="Other info">

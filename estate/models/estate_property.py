@@ -77,5 +77,10 @@ class EstateProperty(models.Model):
             self.garden_area = 0
             self.garden_orientation = False
 
-
-                
+    _sql_constraints = [
+        ('check_expected_price', 'CHECK(expected_price > 0)',
+         'The expected price must be a positive number larger than 0.'),
+         ('check_selling_price', 'CHECK(selling_price > 0)',
+         'The selling price must be a positive number larger than 0.'),
+        
+    ]

@@ -5,7 +5,7 @@ class EstatePropertyOffer(models.Model):
     _name = "estate.property.offer"
     _description ="Offers made on property"
 
-    price = fields.Float(string="Price", default="0.0")
+    price = fields.Float(string="Price")
     status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')], copy=False, string="Status")
     partner_id = fields.Many2one("res.partner", string="Partner", required=True)
     property_id = fields.Many2one("estate.property", required=True)
@@ -41,5 +41,7 @@ class EstatePropertyOffer(models.Model):
             if offer.date_deadline and offer.create_date:
                 offer.validity = (offer.date_deadline - fields.Date.to_date(offer.create_date)).days
     
-
-   
+    _sql_constraints = [
+        ('check_price', 'CHECK(price >= 0)',
+         'The offer price needs to be a positive number.')
+    ]
