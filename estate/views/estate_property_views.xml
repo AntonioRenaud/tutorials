@@ -34,13 +34,14 @@
                         string="SOLD" />
                     <button name="cancel_property" type="object"
                         string="CANCEL" />
-
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="new, offer received, offer accepted, sold" />
                 </header>
                 <sheet>
                     <group class="d-flex flex-column">
                         <field class="h1 mb-3" name='name' nolabel='1' />
                         <field placeholder="Select Tags" name="tag_ids" widget="many2many_tags"
-                            nolabel='1' />
+                            nolabel='1' options="{'color_field': 'color'}" />
                     </group>
                     <group>
                         <group>
@@ -62,19 +63,18 @@
                                     <field name="facades" />
                                     <field name="garage" />
                                     <field name="garden" />
-                                    <field name="garden_area" />
-                                    <field name="garden_orientation" />
+                                    <field name="garden_area" invisible="not garden" />
+                                    <field name="garden_orientation" invisible="not garden" />
                                     <field name="state" />
-                                    <field name="property_type_id" />
+                                    <field name="property_type_id"
+                                        options="{'no_create_edit': true, 'no_create': true}" />
                                     <field name="total_area" />
 
                                 </group>
                             </page>
                             <page string="Offers">
-                                <group
-                                    class="d-flex w-100 justify-content-center">
-                                    <field name="offer_ids" nolabel="1" />
-                                </group>
+                                <field name="offer_ids" nolabel="1"
+                                    readonly="state in ('offer_accepted', 'sold', 'canceled')" />
                             </page>
                             <page string="Other info">
                                 <group
